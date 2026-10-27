@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wafosno.com</title>
+<meta name="description" content="wafosno">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<aside class="side">
+  <a class="brand" href="index.html"><i></i>wafosno.com</a>
+  <nav class="nav">
+    <a href="index.html" aria-current="page">Home</a>
+    <a href="projects.html">Projects</a>
+  </nav>
+  <small>&copy; <span id="yr"></span> wafosno</small>
+</aside>
+
+<main>
+  <section class="panel hero">
+    <h1>Waiting For Snow</h1>
+    <!-- EDIT: your tagline -->
+    <p>apixvl's tools, games, and projects</p>
+    <div class="btns">
+      <a class="btn main" href="projects.html">Browse projects</a>
+      <a class="btn" href="#news">Latest news</a>
+    </div>
+  </section>
+
+  <div class="cols">
+    <section class="panel" id="news">
+      <h2>Latest news</h2>
+      <!-- EDIT: add, remove, or reorder items. Newest first. -->
+      <ul class="news" id="newsList"></ul>
+    </section>
+
+    <section class="panel">
+      <h2>Find me</h2>
+      <!-- EDIT: replace the # with your real links -->
+      <div class="links">
+        <a href="#">GitHub <span>@apixvl</span></a>
+        <a href="#">Discord <span>@apixvl</span></a>
+        <a href="#">YouTube <span>@apixvl</span></a>
+        <a href="#">Roblox <span>@apixvl</span></a>
+        <a href="mailto:you@wafosno.com">Email <span>SOON</span></a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+// EDIT YOUR NEWS HERE. One line per post: [date, title, short description]
+const NEWS = [
+  ["Oct 26", "LAUNCH", "Got myself a domain! I'm setting up a basic homepage, I'll add more stuff over time."],
+
+];
+document.getElementById("newsList").innerHTML = NEWS.map(
+  ([d, t, s]) => `<li><time>${d}</time><div><b>${t}</b><span>${s}</span></div></li>`
+).join("");
+document.getElementById("yr").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
