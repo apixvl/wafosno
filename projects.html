@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projects | wafosno.com</title>
+<meta name="description" content="Everything I've built.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<aside class="side">
+  <a class="brand" href="index.html"><i></i>wafosno.com</a>
+  <nav class="nav">
+    <a href="index.html">Home</a>
+    <a href="projects.html" aria-current="page">Projects</a>
+  </nav>
+  <small>&copy; <span id="yr"></span> wafosno</small>
+</aside>
+
+<main>
+  <section class="panel">
+    <h2 style="font-size:1.6rem;letter-spacing:-.02em;margin-bottom:6px">Projects</h2>
+    <p class="muted" style="margin-bottom:18px">Projects I built. Click a card to open it.</p>
+    <input class="search" id="q" type="search" placeholder="Search projects" aria-label="Search projects">
+  </section>
+
+  <!-- EDIT: copy a whole <a class="card"> block for each project. Change href, title, description, and tag. -->
+  <section class="grid" id="grid">
+    <a class="card" href="https://etoh.wafosno.com/"><span class="tag">Productivity</span><h3>EToH Music Player</h3><p>Listen to music from the biggest obby game on Roblox, right in your browser. Updated occasionally</p></a>
+
+    <!-->add more stuff here okay</-->
+  </section>
+  <p class="empty" id="empty">No projects match that search.</p>
+</main>
+
+<script>
+const cards = [...document.querySelectorAll(".card")], empty = document.getElementById("empty");
+document.getElementById("q").addEventListener("input", e => {
+  const v = e.target.value.toLowerCase().trim(); let n = 0;
+  cards.forEach(c => { const m = c.textContent.toLowerCase().includes(v); c.style.display = m ? "" : "none"; n += m; });
+  empty.style.display = n ? "none" : "block";
+});
+document.getElementById("yr").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
