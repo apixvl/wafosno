@@ -16,14 +16,25 @@
   <nav class="nav">
     <a href="index.html" aria-current="page">Home</a>
     <a href="projects.html">Projects</a>
+    <a href="tools.html">Tools</a>
   </nav>
   <small>&copy; <span id="yr"></span> wafosno</small>
 </aside>
 
 <main>
+    
+    <div class="persona-dialogue-container">
+    <div id="dialogueBox" class="dialogue-box"></div>
+    <img 
+      id="characterSprite"
+      src="" 
+      alt="Character Sprite" 
+      class="character-sprite"
+      onclick="toggleDialogue()"
+    />
+  </div>
   <section class="panel hero">
     <h1>Waiting For Snow</h1>
-    <!-- EDIT: your tagline -->
     <p>apixvl's tools, games, and projects</p>
     <div class="btns">
       <a class="btn main" href="projects.html">Browse projects</a>
@@ -40,21 +51,20 @@
 
     <section class="panel">
       <h2>Find me</h2>
-      <!-- EDIT: replace the # with your real links -->
       <div class="links">
-        <a href="#">GitHub <span>@apixvl</span></a>
+        <a href="https://github.com/apixvl">GitHub <span>@apixvl</span></a>
         <a href="#">Discord <span>@apixvl</span></a>
         <a href="#">YouTube <span>@apixvl</span></a>
         <a href="#">Roblox <span>@apixvl</span></a>
-        <a href="mailto:you@wafosno.com">Email <span>SOON</span></a>
+        <a href="mailto:you@wafosno.com">Email <span>contact@wafosno.com</span></a>
       </div>
     </section>
   </div>
 </main>
 
 <script>
-// EDIT YOUR NEWS HERE. One line per post: [date, title, short description]
 const NEWS = [
+  ["Nov 6", "Tools", "Misc. tools site being added. Sick of having to google different small tools? Instead I put them in one place! No more wasting time googling for a calculator or for gif convertors."],
   ["Oct 26", "LAUNCH", "Got myself a domain! I'm setting up a basic homepage, I'll add more stuff over time."],
 
 ];
@@ -62,6 +72,47 @@ document.getElementById("newsList").innerHTML = NEWS.map(
   ([d, t, s]) => `<li><time>${d}</time><div><b>${t}</b><span>${s}</span></div></li>`
 ).join("");
 document.getElementById("yr").textContent = new Date().getFullYear();
+
+// 1. Array of possible dialogue lines
+    const dialogueList = [
+      "I need a saga. What's the saga? It's songs for the deaf. You can't even hear it!",
+      "2 Megabytes?? In THAT!?",
+      "SLOP SLOP SLOP AI SLOP 🤮🤮🤮🤮🤮🤮🤮",
+      "California's this exciting?"
+    ];
+
+    const characterImages = [
+      "image1.png",
+      "image2.jpeg"
+    ];
+
+    // Function to pick a random item from any array
+    function getRandomItem(array) {
+      const randomIndex = Math.floor(Math.random() * array.length);
+      return array[randomIndex];
+    }
+
+    // Function run automatically when the page finishes loading
+    window.addEventListener('DOMContentLoaded', () => {
+      const spriteImg = document.getElementById('characterSprite');
+      // Set the image src to a random character from the array
+      spriteImg.src = getRandomItem(characterImages);
+    });
+
+    // Function triggered on clicking the sprite
+    function toggleDialogue() {
+      const box = document.getElementById('dialogueBox');
+
+      if (box.style.display === 'block') {
+        // If dialogue is currently showing, hide it
+        box.style.display = 'none';
+      } else {
+        // Pick a new random dialogue text and display it
+        box.innerText = getRandomItem(dialogueList);
+        box.style.display = 'block';
+      }
+    }
+
 </script>
 </body>
 </html>
