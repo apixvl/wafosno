@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WAFOSNO MTG | Add bulk cards to Moxfield FAST</title>
+<style>
+:root{--bg:#14161a;--p:#1e2127;--b:#2e333c;--t:#e6e8eb;--m:#8a93a0;--a:#7c5cff;--g:#2fbf71;--r:#e5484d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:15px/1.4 system-ui,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--p);border-bottom:1px solid var(--b);display:flex;gap:8px;align-items:center;padding:8px 12px;flex-wrap:wrap}
+header h1{font-size:16px;margin:0 12px 0 0}
+nav{display:flex;gap:6px}
+button,input,select,textarea{font:inherit;color:var(--t);background:#262a32;border:1px solid var(--b);border-radius:8px;padding:8px 12px}
+button{cursor:pointer}button:hover{border-color:var(--a)}
+nav button.on,.seg button.on{background:var(--a);border-color:var(--a)}
+nav i{font-style:normal;background:var(--g);color:#000;border-radius:10px;padding:0 7px;margin-left:4px;font-size:12px}
+main{max-width:1200px;margin:0 auto;padding:12px}
+.box{background:var(--p);border:1px solid var(--b);border-radius:12px;padding:14px;margin-bottom:12px}
+h2{margin:0 0 8px;font-size:16px}.m{color:var(--m)}a{color:#a99bff}
+input{width:100%}.row{display:flex;gap:8px;margin:8px 0}.row button{white-space:nowrap}
+.sl{max-height:50vh;overflow:auto;margin-top:8px}
+.set{display:flex;width:100%;justify-content:space-between;text-align:left;margin-bottom:4px;background:transparent}
+.bar{display:flex;gap:8px;margin-bottom:12px;position:sticky;top:52px;z-index:4;background:var(--bg);padding:6px 0}
+.seg{display:flex}.seg button:first-child{border-radius:8px 0 0 8px}.seg button:last-child{border-radius:0 8px 8px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.card{background:var(--p);border:1px solid var(--b);border-radius:10px;padding:8px;position:relative}
+.card.has{border-color:var(--g);box-shadow:0 0 0 1px var(--g)}
+.card img{width:100%;aspect-ratio:488/680;border-radius:8px;background:#0003;display:block}
+.nm{margin:6px 0;font-weight:600;font-size:14px}.nm span{color:var(--m);font-weight:400;margin-right:4px}
+.ct{display:flex;align-items:center;gap:6px;margin-top:4px}.ct .l{flex:1;font-size:13px;color:var(--m)}
+.ct button{width:34px;height:34px;padding:0;font-size:18px}.ct button.p{background:var(--g);color:#000;border-color:var(--g)}
+.ct b{min-width:24px;text-align:center;font-size:16px}
+.badge{position:absolute;top:12px;right:12px;background:var(--g);color:#000;border-radius:10px;padding:1px 8px;font-size:12px;font-weight:700;display:none}
+.card.has .badge{display:block}
+.rows .card{display:flex;align-items:center;gap:12px;margin-bottom:6px;padding:6px 10px}
+.rows .nm{flex:1;margin:0}.rows .cts{display:flex;gap:14px}.rows .badge{position:static;margin-right:4px}
+.rows .ct{margin:0}.rows .ct .l{flex:none}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--g);color:#000;padding:8px 16px;border-radius:20px;opacity:0;transition:.2s;pointer-events:none;font-weight:600}
+#toast.on{opacity:1}
+textarea{width:100%;height:240px;font-family:ui-monospace,monospace;font-size:13px}
+.x{color:var(--r)}.sum{margin:8px 0}
+@media(max-width:600px){.rows .card{flex-wrap:wrap}}
+</style></head><body>
+<header><h1>WAFOSNO MTG | Add bulk cards to Moxfield FAST</h1><nav id="nav"></nav></header>
+<main id="main"></main><div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const API='https://mtgjson.com/api/v5/';
+const KS=[['nonfoil','Normal'],['foil','Foil'],['etched','Etched']];
+const S={sets:null,cur:null,cards:[],byId:{},q:'',view:'grid',tab:'sets',list:{},msg:'',fmt:'mox',sq:''};
+try{S.list=JSON.parse(localStorage.getItem('bulk-list')||'{}')}catch(e){}
+const save=()=>{try{localStorage.setItem('bulk-list',JSON.stringify(S.list))}catch(e){}};
+const sum=q=>Object.values(q).reduce((a,b)=>a+b,0);
+const total=()=>Object.values(S.list).reduce((a,e)=>a+sum(e.q),0);
+const qty=(id,k)=>(S.list[id]&&S.list[id].q[k])||0;
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1200)}
+
+function adj(id,k,d){
+  let e=S.list[id];const c=S.byId[id];
+  if(!e){if(d<0||!c)return;e=S.list[id]={name:c.name,set:c.set,num:c.num,q:{}}}
+  e.q[k]=Math.max(0,(e.q[k]||0)+d);if(!e.q[k])delete e.q[k];
+  if(!Object.keys(e.q).length)delete S.list[id];
+  save();
+  if(S.tab=='list')rList();else refresh(id);
+  const n=$('#cnt');if(n)n.textContent=total();
+}
+function refresh(id){
+  document.querySelectorAll(`[data-n^="${id}|"]`).forEach(el=>el.textContent=qty(id,el.dataset.n.split('|')[1]));
+  const el=document.querySelector(`[data-c="${id}"]`);if(!el)return;
+  const t=S.list[id]?sum(S.list[id].q):0;
+  el.classList.toggle('has',t>0);el.querySelector('.badge').textContent='+'+t;
+}
+const ctr=(id,k,l)=>`<div class="ct"><span class="l">${l}</span><button data-a="-1" data-id="${id}" data-k="${k}">−</button><b data-n="${id}|${k}">${qty(id,k)}</b><button class="p" data-a="1" data-id="${id}" data-k="${k}">+</button></div>`;
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(b)adj(b.dataset.id,b.dataset.k,+b.dataset.a);
+  const t=e.target.closest('[data-tab]');if(t){S.tab=t.dataset.tab;render()}
+});
+
+function render(){
+  $('#nav').innerHTML=[['sets','Sets'],['cards',S.cur?S.cur.code.toUpperCase()+' Cards':'Cards'],['list','My List']]
+    .map(([t,l])=>`<button class="${S.tab==t?'on':''}" data-tab="${t}">${esc(l)}${t=='list'?` <i id="cnt">${total()}</i>`:''}</button>`).join('');
+  ({sets:rSets,cards:rCards,list:rList})[S.tab]();
+}
+
+/* ---------- Sets ---------- */
+function rSets(){
+  $('#main').innerHTML=`<div class="box"><h2>Choose a set</h2><input id="sq" placeholder="Filter sets by name or code…" value="${esc(S.sq)}"><div id="sl" class="sl"></div></div>
+  <div class="box"><h2>Offline / manual</h2><p class="m">Download <b>https://mtgjson.com/api/v5/CODE.json</b> (e.g. MH3.json) and upload it here, or type a set code to fetch it.</p>
+  <div class="row"><input id="cc" placeholder="Set code e.g. MH3"><button id="lc">Load</button></div>
+  <input type="file" id="fu" accept=".json,application/json"></div><p id="msg" class="m">${esc(S.msg)}</p>`;
+  $('#sq').oninput=e=>{S.sq=e.target.value;drawSets()};
+  $('#lc').onclick=()=>{const c=$('#cc').value.trim();if(c)loadSet(c)};
+  $('#cc').onkeydown=e=>{if(e.key=='Enter')$('#lc').click()};
+  $('#fu').onchange=async e=>{const f=e.target.files[0];if(!f)return;
+    try{parse(JSON.parse(await f.text()))}catch(x){setMsg('Could not read that file: '+x.message)}};
+  drawSets();
+}
+function setMsg(m){S.msg=m;const el=$('#msg');if(el)el.textContent=m}
+function drawSets(){
+  const el=$('#sl');if(!el)return;
+  if(!S.sets){el.innerHTML='<p class="m">Loading set list…</p>';return}
+  if(!S.sets.length){el.innerHTML='<p class="m">Set list unavailable (offline?). Use the manual option below.</p>';return}
+  const q=S.sq.toLowerCase();
+  el.innerHTML=S.sets.filter(s=>!q||s.name.toLowerCase().includes(q)||s.code.toLowerCase()==q).slice(0,300)
+    .map(s=>`<button class="set" data-code="${esc(s.code)}"><span>${esc(s.name)}</span><span class="m">${esc(s.code)} · ${esc(s.releaseDate||'')}</span></button>`).join('');
+  el.querySelectorAll('.set').forEach(b=>b.onclick=()=>loadSet(b.dataset.code));
+}
+async function loadSet(code){
+  setMsg('Loading '+code.toUpperCase()+'…');
+  try{
+    const r=await fetch(API+code.toUpperCase()+'.json');
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    parse(await r.json());
+  }catch(e){
+    setMsg(`Couldn't download ${code.toUpperCase()} (${e.message}). Download ${API}${code.toUpperCase()}.json yourself and upload it below.`);
+  }
+}
+function parse(j){
+  const d=j.data;if(!d||!Array.isArray(d.cards))throw new Error('not an MTGJSON set file (no data.cards)');
+  const num=n=>parseInt(n)||0;
+  S.cards=d.cards.map(c=>({id:c.uuid,name:c.name,set:(c.setCode||d.code),num:String(c.number||''),
+    fin:(c.finishes&&c.finishes.length?c.finishes:['nonfoil','foil']),img:(c.identifiers||{}).scryfallId,rarity:c.rarity||''}))
+    .sort((a,b)=>num(a.num)-num(b.num)||a.num.localeCompare(b.num));
+  S.byId={};S.cards.forEach(c=>S.byId[c.id]=c);
+  S.cur={code:d.code,name:d.name};S.q='';S.tab='cards';S.msg='';render();
+}
+
+/* ---------- Cards ---------- */
+function vis(){
+  const q=S.q.trim().toLowerCase();if(!q)return S.cards;
+  return /^\d+[a-z★†]?$/.test(q)?S.cards.filter(c=>c.num.toLowerCase().startsWith(q)):S.cards.filter(c=>c.name.toLowerCase().includes(q));
+}
+function cardHTML(c){
+  const t=S.list[c.id]?sum(S.list[c.id].q):0;
+  const img=S.view=='grid'&&c.img?`<img loading="lazy" alt="" src="https://cards.scryfall.io/small/front/${c.img[0]}/${c.img[1]}/${c.img}.jpg">`:'';
+  return `<div class="card${t?' has':''}" data-c="${c.id}">${img}<span class="badge">+${t}</span>
+  <div class="nm"><span>#${esc(c.num)}</span>${esc(c.name)}</div><div class="cts">${KS.filter(([k])=>c.fin.includes(k)).map(([k,l])=>ctr(c.id,k,l)).join('')}</div></div>`;
+}
+function drawRes(){
+  const r=vis();$('#res').className=S.view=='grid'?'grid':'rows';
+  $('#res').innerHTML=r.length?r.map(cardHTML).join(''):'<p class="m">No matches.</p>';
+}
+function rCards(){
+  if(!S.cur){$('#main').innerHTML='<div class="box"><p>Pick a set on the Sets tab first.</p></div>';return}
+  $('#main').innerHTML=`<p class="m" style="margin:0 0 6px">${esc(S.cur.name)} · ${S.cards.length} cards</p>
+  <div class="bar"><input id="q" placeholder="Type number or name · Enter = +1 normal · Shift+Enter = +1 foil" value="${esc(S.q)}" autocomplete="off">
+  <div class="seg"><button data-v="grid" class="${S.view=='grid'?'on':''}">Grid</button><button data-v="list" class="${S.view=='list'?'on':''}">List</button></div></div><div id="res"></div>`;
+  const q=$('#q');q.oninput=()=>{S.q=q.value;drawRes()};
+  q.onkeydown=e=>{
+    if(e.key!='Enter')return;const c=vis()[0];if(!c)return;
+    const k=e.shiftKey&&c.fin.includes('foil')?'foil':c.fin.includes('nonfoil')?'nonfoil':c.fin[0];
+    adj(c.id,k,1);toast(`+1 ${k=='nonfoil'?'':k+' '}${c.name}`);S.q='';q.value='';drawRes();
+  };
+  document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{S.view=b.dataset.v;rCards()});
+  drawRes();if(matchMedia('(pointer:fine)').matches)q.focus();
+}
+
+/* ---------- List + Export ---------- */
+function rowsOut(){
+  const out=[];
+  Object.values(S.list).sort((a,b)=>a.set.localeCompare(b.set)||(parseInt(a.num)||0)-(parseInt(b.num)||0)).forEach(e=>
+    KS.forEach(([k])=>{if(e.q[k])out.push({n:e.q[k],name:e.name,set:e.set,num:e.num,k})}));
+  return out;
+}
+const csv=a=>a.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',');
+const FM={
+  mox:['Moxfield (text)','txt',r=>r.map(x=>`${x.n} ${x.name} (${x.set.toUpperCase()}) ${x.num}${x.k=='foil'?' *F*':x.k=='etched'?' *E*':''}`).join('\n')],
+  moxcsv:['Moxfield (CSV)','csv',r=>[csv(['Count','Tradelist Count','Name','Edition','Condition','Language','Foil','Tag','Last Modified','Collector Number','Alter','Proxy','Purchase Price'])]
+    .concat(r.map(x=>csv([x.n,0,x.name,x.set.toLowerCase(),'Near Mint','English',x.k=='nonfoil'?'':x.k,'',new Date().toISOString().slice(0,19).replace('T',' '),x.num,'False','False','']))).join('\n')],
+  plain:['Plain (qty name)','txt',r=>r.map(x=>`${x.n} ${x.name}`).join('\n')],
+  gcsv:['Generic CSV','csv',r=>[csv(['Quantity','Name','Set','Collector Number','Finish'])].concat(r.map(x=>csv([x.n,x.name,x.set.toUpperCase(),x.num,x.k]))).join('\n')],
+  json:['JSON','json',r=>JSON.stringify(r,null,2)]
+};
+function rList(){
+  const es=Object.entries(S.list).sort((a,b)=>a[1].set.localeCompare(b[1].set)||(parseInt(a[1].num)||0)-(parseInt(b[1].num)||0));
+  const rows=rowsOut();
+  $('#main').innerHTML=`<div class="box"><h2>Temporary list</h2><p class="sum m">${total()} cards · ${es.length} unique</p>
+  <div class="rows">${es.length?es.map(([id,e])=>`<div class="card"><div class="nm"><span>${esc(e.set.toUpperCase())} #${esc(e.num)}</span>${esc(e.name)}</div>
+  <div class="cts">${KS.filter(([k])=>e.q[k]).map(([k,l])=>ctr(id,k,l)).join('')}</div></div>`).join(''):'<p class="m">Nothing added yet.</p>'}</div>
+  ${es.length?'<button class="x" id="clr">Clear list</button>':''}</div>
+  <div class="box"><h2>Export</h2><div class="row"><select id="fm">${Object.entries(FM).map(([k,v])=>`<option value="${k}"${S.fmt==k?' selected':''}>${v[0]}</option>`).join('')}</select>
+  <button id="cp">Copy</button><button id="dl">Download</button></div><textarea id="ta" readonly></textarea></div>`;
+  const f=FM[S.fmt];$('#ta').value=f[2](rows);
+  $('#fm').onchange=e=>{S.fmt=e.target.value;rList()};
+  $('#cp').onclick=async()=>{try{await navigator.clipboard.writeText($('#ta').value)}catch(e){$('#ta').select();document.execCommand('copy')}toast('Copied')};
+  $('#dl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([$('#ta').value],{type:'text/plain'}));a.download='collection.'+f[1];a.click()};
+  const c=$('#clr');if(c)c.onclick=()=>{if(confirm('Clear the whole list?')){S.list={};save();render()}};
+}
+
+/* ---------- init ---------- */
+render();
+fetch(API+'SetList.json').then(r=>r.json()).then(j=>{
+  S.sets=(j.data||[]).sort((a,b)=>(b.releaseDate||'').localeCompare(a.releaseDate||''));drawSets();
+}).catch(()=>{S.sets=[];drawSets()});
+</script></body></html>
